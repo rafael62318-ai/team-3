@@ -66,6 +66,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0849fff5671592747966e2c499281be0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6030402452836197257}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0849fff5671592747966e2c499281be0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7078350290728787318}
   m_SourcePrefab: {fileID: 100100000, guid: 0849fff5671592747966e2c499281be0, type: 3}
 --- !u!1 &1482820495402464424 stripped
 GameObject:
@@ -109,3 +112,19 @@ CapsuleCollider:
   m_Height: 5
   m_Direction: 1
   m_Center: {x: 0, y: 2.5, z: 0}
+--- !u!114 &7078350290728787318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482820495402464424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed65e1c3f0e8653458fdf30a95bb6250, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHP: 100
+  dropGold: 4
+  coinPrefab: {fileID: 2173853463542669105, guid: 88162284851a90f4aae172eace6337ca, type: 3}
+  goldTextPrefab: {fileID: 7670602190433834032, guid: 5960546bf0d87d643b735a505885a7df, type: 3}
