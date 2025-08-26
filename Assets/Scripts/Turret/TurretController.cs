@@ -21,46 +21,41 @@ public class TurretController : MonoBehaviour
     public bool isCatcherType = false; // Catcher 타입 여부
     public Animator anim; // 애니메이터 컴포넌트
     public int damage = 10;
-    
+
     // 코루틴 딜레이 계산용
     private float shootDelay;
-    
+
     void Start()
     {
-        // 초기 설정
         if (lookAtObj != null)
-        {
             homeY = lookAtObj.localRotation.eulerAngles.y;
-        }
+
         if (isCatcherType && anim == null)
-        {
             anim = GetComponent<Animator>();
-        }
-        shootDelay = 1f / fireRate;
+
+        // 0으로 나눔 방지
+        shootDelay = 1f / Mathf.Max(0.0001f, fireRate);
     }
 
     void Update()
     {
-        // 1. 타겟 탐색
+        // 1) 타겟 탐색
         FindTarget();
 
-        // 2. 타겟이 있을 경우
+        // 2) 타겟 있을 때
         if (target != null)
         {
             AimAtTarget();
-            
-            // 발사 로직
-            if (!isCatcherType && !isShooting)
+
+            if (!isShooting)
             {
-                StartCoroutine(ShootCoroutine());
-            }
-            else if (isCatcherType && !isShooting)
-            {
-                // Catcher 타입은 애니메이션으로 공격
-                StartCoroutine(CatcherAttackCoroutine());
+                if (!isCatcherType)
+                    StartCoroutine(ShootCoroutine());
+                else
+                    StartCoroutine(CatcherAttackCoroutine());
             }
         }
-        // 3. 타겟이 없을 경우
+        // 3) 타겟 없을 때
         else
         {
             ReturnToHomeRotation();
@@ -69,7 +64,6 @@ public class TurretController : MonoBehaviour
 
     void FindTarget()
     {
-        // 범위 내 가장 가까운 타겟 찾기
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, range);
         Transform closestTarget = null;
         float closestDistance = Mathf.Infinity;
@@ -91,42 +85,38 @@ public class TurretController : MonoBehaviour
 
     void AimAtTarget()
     {
-        // 타겟을 향해 회전
+        if (lookAtObj == null || target == null) return;
+
         Vector3 direction = target.position - lookAtObj.position;
-        direction.y = 0; // Y축은 고정
+        direction.y = 0;
         Quaternion lookRotation = Quaternion.LookRotation(direction);
         lookAtObj.rotation = Quaternion.Slerp(lookAtObj.rotation, lookRotation, Time.deltaTime * rotationSpeed);
     }
-    
+
     void ReturnToHomeRotation()
     {
-        // 초기 방향으로 회전
-        Quaternion home = Quaternion.Euler(lookAtObj.localRotation.eulerAngles.x, homeY, lookAtObj.localRotation.eulerAngles.z);
+        if (lookAtObj == null) return;
+
+        Quaternion home = Quaternion.Euler(
+            lookAtObj.localRotation.eulerAngles.x,
+            homeY,
+            lookAtObj.localRotation.eulerAngles.z
+        );
         lookAtObj.rotation = Quaternion.Slerp(lookAtObj.rotation, home, Time.deltaTime * rotationSpeed);
     }
 
-    // 일반 발사 코루틴
+    // ★중복 제거·정리된 일반 발사 코루틴
     IEnumerator ShootCoroutine()
     {
         isShooting = true;
-        
-        while(target != null)
-        {
-            isShooting = true;
-         while(target != null)
-        {
-             Debug.Log("총알 발사! 타겟: " + target.name);
-            // ... 총알 생성 코드
-            yield return new WaitForSeconds(shootDelay);
-        }
-             isShooting = false;
 
+        while (target != null)
+        {
             // 총알 생성
             if (projectilePrefab != null && shootElement != null)
             {
                 GameObject newBullet = Instantiate(projectilePrefab, shootElement.position, shootElement.rotation);
 
-                // 생성된 총알의 Projectile 스크립트에 타겟과 데미지 정보 전달
                 var bulletScript = newBullet.GetComponent<Projectile>();
                 if (bulletScript != null)
                 {
@@ -134,10 +124,10 @@ public class TurretController : MonoBehaviour
                     bulletScript.damage = damage;
                 }
             }
-            
+
             yield return new WaitForSeconds(shootDelay);
         }
-        
+
         isShooting = false;
     }
 
@@ -145,38 +135,40 @@ public class TurretController : MonoBehaviour
     IEnumerator CatcherAttackCoroutine()
     {
         isShooting = true;
-        
+
         while (target != null)
         {
             if (anim != null)
             {
                 anim.SetBool("Attack", true);
-                yield return new WaitForSeconds(anim.GetCurrentAnimatorStateInfo(0).length); // 애니메이션 재생 시간만큼 기다림
+                // 현재 레이어 길이만큼 대기(애니메이션 길이 확보가 안되면 한 프레임 대기로 대체됨)
+                float wait = anim.GetCurrentAnimatorStateInfo(0).length;
+                if (wait <= 0f) wait = Time.deltaTime;
+                yield return new WaitForSeconds(wait);
                 anim.SetBool("Attack", false);
             }
-            
-            // 공격 애니메이션이 끝나면 데미지 입히기
+
+            // 데미지 처리
             if (target != null)
             {
                 var enemyHp = target.GetComponent<EnemyHp>();
                 if (enemyHp != null)
-                {
                     enemyHp.Dmg(damage);
-                }
             }
-            
+
             yield return new WaitForSeconds(shootDelay);
         }
 
         isShooting = false;
-        // 타겟이 사라지면 초기 애니메이션으로 돌아가기
+
+        // 초기 애니메이션 복귀
         if (anim != null)
         {
             anim.SetBool("Attack", false);
             anim.SetBool("T_pose", true);
         }
     }
-    
+
     // 개발 편의를 위한 시각화
     void OnDrawGizmosSelected()
     {
